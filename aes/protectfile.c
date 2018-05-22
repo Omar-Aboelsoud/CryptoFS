@@ -49,14 +49,33 @@ int hexvalue (char c)
 
 
 int main (int argc, char **argv){
+  unsigned long rk[RKLENGTH(KEYBITS)];  /* round key */
+  unsigned char key[KEYLENGTH(KEYBITS)];/* cipher key */
+  char  buf[100];
+  int i, nbytes, nwritten , ctr;
+  int totalbytes;
+  int k0, k1;
+  int fileId = 0x1234;      /* fake (in this example) */
+  int nrounds;        /* # of Rijndael rounds */
+  char *password;     /* supplied (ASCII) password */
+  int fd;
+  char *filename;
+  unsigned char filedata[16];
+  unsigned char ciphertext[16];
+  unsigned char ctrvalue[16];
+  char *inputkey; 
+  int i ; 
  if (argc < 4)
   {
     fprintf (stderr, "Usage: %s <-e -d > <key> <file>\n", argv[0]);
     return 1;
   }
   if(argc==4){
-
-    printf("%c" , argv[2]);
+    /*vaildate the input key is hexa decimal then divide it into k0 and k1*/
+    *inputkey=argc[3];
+    for (i=0 ,key[i],i++){
+    printf("%s\n", inputkey);
+  }
   }
 
 }
