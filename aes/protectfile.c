@@ -14,7 +14,7 @@
 
 #include <stdio.h>
 #include <fcntl.h>
-#include <strings.h>
+#include <string.h>
 #include <unistd.h>
 #include <stdlib.h>
 #include "rijndael.h"
@@ -49,6 +49,23 @@ int hexvalue (char c)
 
 
 int main (int argc, char **argv){
+  unsigned long rk[RKLENGTH(KEYBITS)];  /* round key */
+  unsigned char key[KEYLENGTH(KEYBITS)];/* cipher key */
+  char  buf[100];
+  int i, nbytes, nwritten , ctr;
+  int totalbytes;
+  int k0, k1;
+  int 
+  int fileId = 0x1234;      /* fake (in this example) */
+  int nrounds;        /* # of Rijndael rounds */
+  char *password;     /* supplied (ASCII) password */
+  int fd;
+  char *filename;
+  unsigned char filedata[16];
+  unsigned char ciphertext[16];
+  unsigned char ctrvalue[16];
+  char *inputkey; 
+  int z,keysize,counter ; 
  if (argc < 4)
   {
     fprintf (stderr, "Usage: %s <-e -d > <key> <file>\n", argv[0]);
@@ -57,6 +74,15 @@ int main (int argc, char **argv){
   if(argc==4){
 
    // printf("%s /n" , argv[2]);
+   /*get key from the input*/
+	inputkey=argv[2];
+    keysize=strlen(inputkey); /*get input keys size to divied them*/
+    printf("%d\n", keysize);
+    /*vaildate the input key is hexa decimal then divide it into k0 and k1*/
+    for (z=0 ;inputkey[z];z++){
+	 hexvalue(inputkey[z]);
+   // printf("%c", inputkey[z]);
+  }    
   }
 
 }
