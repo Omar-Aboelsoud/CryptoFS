@@ -18,7 +18,6 @@
 #include <unistd.h>
 #include <stdlib.h>
 #include "rijndael.h"
-
 static char rcsid[] = "$Id: encrypt.c,v 1.2 2003/04/15 01:05:36 elm Exp elm $";
 
 #define KEYBITS 128
@@ -49,30 +48,16 @@ int hexvalue (char c)
 
 
 
-/*********************************************************************
-*
-* keyhexchk
-*
-* This routine takes in a char array and checks each of the characters 
-* to see if they are all valid hexadecimal characters.
-*
-***********************************************************************
-*/
-void
-keyhexchk (char key[]) {
-  size_t i;
-  int counter =0;
-  for (i = 0; key[i]; i++) {
-    hexvalue(key[i]);
-    counter++;
-    printf("%d",counter);
+int main (int argc, char **argv){
+ if (argc < 4)
+  {
+    fprintf (stderr, "Usage: %s <-e -d > <key> <file>\n", argv[0]);
+    return 1;
+  }
+  if(argc==4){
+
+    printf("%c" , argv[2]);
   }
 
-
-int main(int argc, char **argv){
-
-
-printf("%d\n", keyhexchk(['6','8','2','6','e','d','3','a','9','2','4','6','e','3','1','a']);
-
-
 }
+

@@ -95,7 +95,7 @@ int main(int argc, char **argv)
   unsigned char ctrvalue[16];
 
 
-#if 0
+#if 
   if (argc < 3)
   {
     fprintf (stderr, "Usage: %s <key> <file>\n", argv[0]);
