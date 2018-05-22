@@ -55,6 +55,7 @@ int main (int argc, char **argv){
   int i, nbytes, nwritten , ctr;
   int totalbytes;
   int k0, k1;
+  char *ck0 , *ck1;
   int 
   int fileId = 0x1234;      /* fake (in this example) */
   int nrounds;        /* # of Rijndael rounds */
@@ -82,7 +83,17 @@ int main (int argc, char **argv){
     for (z=0 ;inputkey[z];z++){
 	 hexvalue(inputkey[z]);
    // printf("%c", inputkey[z]);
-  }    
+  } 
+  strncpy(ck0,inputkey,(strlen(inputkey)/2))
+  strncpy(ck1,inputkey+(strlen(inputkey)/2)+1,(strlen(inputkey)/2))
+  int y ;
+  for (y=0 ;k2[y];y++)
+  printf("%c \n",k2[y]);
+    return 0;
+  }
+
+  /*Convert key from hexa to integer*/
+
   }
 
 }
