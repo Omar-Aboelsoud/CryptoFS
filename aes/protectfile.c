@@ -56,7 +56,7 @@ int main (int argc, char **argv){
   }
   if(argc==4){
 
-    printf("%c" , argv[2]);
+   // printf("%s /n" , argv[2]);
   }
 
 }
