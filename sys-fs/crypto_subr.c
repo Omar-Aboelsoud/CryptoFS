@@ -44,7 +44,7 @@
 #include <sys/proc.h>
 #include <sys/vnode.h>
 
-#include <fs/cryptofs/null.h>
+#include <fs/cryptofs/crypto.h>
 
 /*
  * Null layer cache:
@@ -220,7 +220,7 @@ crypto_nodeget(mp, lowervp, vpp)
 	 * provide ready to use vnode.
 	 */
 	if (VOP_ISLOCKED(lowervp) != LK_EXCLUSIVE) {
-		KASSERT((MOUNTTONULLMOUNT(mp)->cryptom_flags & NULLM_CACHE) != 0,
+		KASSERT((MOUNTTOCRYPTOMOUNT(mp)->cryptom_flags & NULLM_CACHE) != 0,
 		    ("lowervp %p is not excl locked and cache is disabled",
 		    lowervp));
 		vn_lock(lowervp, LK_UPGRADE | LK_RETRY);
@@ -290,7 +290,7 @@ crypto_checkvp(vp, fil, lno)
 	char *fil;
 	int lno;
 {
-	struct crypto_node *a = VTONULL(vp);
+	struct crypto_node *a = VTOCRYPTO(vp);
 
 #ifdef notyet
 	/*

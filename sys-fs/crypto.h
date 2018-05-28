@@ -56,12 +56,12 @@ struct crypto_node {
 	u_int			crypto_flags;
 };
 
-#define	NULLV_NOUNLOCK	0x0001
-#define	NULLV_DROP	0x0002
+#define	CRYPTOV_NOUNLOCK	0x0001
+#define	CRYPTOV_DROP	0x0002
 
-#define	MOUNTTONULLMOUNT(mp) ((struct crypto_mount *)((mp)->mnt_data))
-#define	VTONULL(vp) ((struct crypto_node *)(vp)->v_data)
-#define	NULLTOV(xp) ((xp)->crypto_vnode)
+#define	MOUNTTOCRYPTOMOUNT(mp) ((struct crypto_mount *)((mp)->mnt_data))
+#define	VTOCRYPTO(vp) ((struct crypto_node *)(vp)->v_data)
+#define	CRYPTOTOV(xp) ((xp)->crypto_vnode)
 
 int cryptofs_init(struct vfsconf *vfsp);
 int cryptofs_uninit(struct vfsconf *vfsp);
@@ -72,22 +72,22 @@ int crypto_bypass(struct vop_generic_args *ap);
 
 #ifdef DIAGNOSTIC
 struct vnode *crypto_checkvp(struct vnode *vp, char *fil, int lno);
-#define	NULLVPTOLOWERVP(vp) crypto_checkvp((vp), __FILE__, __LINE__)
+#define	CRYPTOVPTOLOWERVP(vp) crypto_checkvp((vp), __FILE__, __LINE__)
 #else
-#define	NULLVPTOLOWERVP(vp) (VTONULL(vp)->crypto_lowervp)
+#define	CRYPTOVPTOLOWERVP(vp) (VTOCRYPTO(vp)->crypto_lowervp)
 #endif
 
 extern struct vop_vector crypto_vnodeops;
 
 #ifdef MALLOC_DECLARE
-MALLOC_DECLARE(M_NULLFSNODE);
+MALLOC_DECLARE(M_CRYPTOFSNODE);
 #endif
 
-#ifdef NULLFS_DEBUG
-#define NULLFSDEBUG(format, args...) printf(format ,## args)
+#ifdef CRYPTOFS_DEBUG
+#define CRYPTOFSDEBUG(format, args...) printf(format ,## args)
 #else
-#define NULLFSDEBUG(format, args...)
-#endif /* NULLFS_DEBUG */
+#define CRYPTOFSDEBUG(format, args...)
+#endif /* CRYPTOFS_DEBUG */
 
 #endif /* _KERNEL */
 

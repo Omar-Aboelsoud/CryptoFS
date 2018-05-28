@@ -180,18 +180,19 @@
 #include <sys/namei.h>
 #include <sys/sysctl.h>
 #include <sys/vnode.h>
-
-#include <fs/cryptofs/null.h>
-
+#include <sys/stat.h>
+#include <fs/cryptofs/crypto.h>
+#include <sys/syslog.h>
 #include <vm/vm.h>
 #include <vm/vm_extern.h>
 #include <vm/vm_object.h>
 #include <vm/vnode_pager.h>
+#include "rijndael.h"
 #define KEYBITS 128
 static int crypto_bug_bypass = 0;   /* for debugging: enables bypass printf'ing */
 SYSCTL_INT(_debug, OID_AUTO, cryptofs_bug_bypass, CTLFLAG_RW, 
 	&crypto_bug_bypass, 0, "");
-
+struct ucred ul[16];
 /*
  * This is the 10-Apr-92 bypass routine.
  *    This version has been optimized for speed, throwing away some
@@ -577,7 +578,7 @@ crypto_remove(struct vop_remove_args *ap)
 		vreleit = 1;
 	} else
 		vreleit = 0;
-	VTOCRYPTO(vp)->crypto_flags |= CRYPV_DROP;
+	VTOCRYPTO(vp)->crypto_flags |= CRYPTOV_DROP;
 	retval = crypto_bypass(&ap->a_gen);
 	if (vreleit != 0)
 		vrele(lvp);
@@ -614,7 +615,7 @@ crypto_rename(struct vop_rename_args *ap)
 
 	if (tvp != NULL) {
 		tnn = VTOCRYPTO(tvp);
-		tnn->crypto_flags |= CRYPV_DROP;
+		tnn->crypto_flags |= CRYPTOV_DROP;
 	}
 	return (crypto_bypass((struct vop_generic_args *)ap));
 }
@@ -623,7 +624,7 @@ static int
 crypto_rmdir(struct vop_rmdir_args *ap)
 {
 
-	VTOCRYPTO(ap->a_vp)->crypto_flags |= CRYPV_DROP;
+	VTOCRYPTO(ap->a_vp)->crypto_flags |= CRYPTOV_DROP;
 	return (crypto_bypass(&ap->a_gen));
 }
 
@@ -758,7 +759,7 @@ crypto_inactive(struct vop_inactive_args *ap __unused)
 	mp = vp->v_mount;
 	xmp = MOUNTTOCRYPTOMOUNT(mp);
 	if ((xmp->cryptom_flags & CRYPTOM_CACHE) == 0 ||
-	    (xp->crypto_flags & CRYPV_DROP) != 0 ||
+	    (xp->crypto_flags & CRYPTOV_DROP) != 0 ||
 	    (lvp->v_vflag & VV_NOSYNC) != 0) {
 		/*
 		 * If this is the last reference and caching of the
@@ -809,7 +810,7 @@ crypto_reclaim(struct vop_reclaim_args *ap)
 	 */
 	if (vp->v_writecount > 0)
 		VOP_ADD_WRITECOUNT(lowervp, -1);
-	if ((xp->crypto_flags & CRYPV_NOUNLOCK) != 0)
+	if ((xp->crypto_flags & CRYPTOV_NOUNLOCK) != 0)
 		vunref(lowervp);
 	else
 		vput(lowervp);
@@ -912,42 +913,50 @@ crypto_vptocnp(struct vop_vptocnp_args *ap)
  * Global vfs data structures
  */
 
-static int crypto_read(struct vop_read_args){
-struct vattr vap;
+static int crypto_read(struct vop_read_args *ap){
 struct vnode *vp ,*ldvp;
-ldvp=CRYPTOVPTOLOWER(vp);
+struct vattr vap;
+ 
+int mode ,result , decryption_flag;
+int k0,k1;
 uid_t uid ;
-int mode ,k0,k1,result , decryption_flag;
+uid=ap->a_cred->cr_uid;
+vp=ap->a_vp;
 k0=1234;
 k1=1232;
+decryption_flag=0;
+	
+ldvp= CRYPTOVPTOLOWERVP(vp);
 /*Get file attributs using VOP_GETATTR */
 VOP_GETATTR(ap->a_vp,&vap,ap->a_cred);
-uid = ap->a_cred->cr_uid;
+
 mode= vap.va_mode;
 log(-1,"mode is : %d " ,mode);
-if (mode & S_ISVTX && k0!=0 && k1!=1){
+if (mode & S_ISVTX ){
 
 log(-1,"the sticky bit is set");
 }
 else{
-result=VOP_READ(vp,ap->a_uio, ap->a_ioflag,ap->a_cred);
-if (result!=0)
-	return result ; 
-else 
+result=VOP_READ(ldvp,ap->a_uio, ap->a_ioflag,ap->a_cred);
+if (result!=0){
+	return result ;
+}
+else {
 	log(-1,"VOP READ SUCCESS");
 }
+	}
+return 0 ;
+	}
 
-}
-
-
+/*
 static int encrypt (int fid, int k0 , int k1 , struct uio *f_uio, int buf_size,struct iovec *io_buffer ) {
-	unsigned long rk[RKLENGTH(KEYBITS)];	/* round key */
-	unsigned char key[KEYLENGTH(KEYBITS)];  /* cipher key */
+	unsigned long rk[RKLENGTH(KEYBITS)];	 
+	unsigned char key[KEYLENGTH(KEYBITS)];  
 
 	int i, ctr;
-	int nrounds; /* # of Rijndael rounds */
+	int nrounds; 
 	int totalbytes;
-	size_t bytes_remaining = bufs[buf_size].iov_len;
+	size_t bytes_remaining = io_buffer[buf_size].iov_len;
 
 	unsigned char filedata[16];
 	unsigned char ciphertext[16];
@@ -956,28 +965,28 @@ static int encrypt (int fid, int k0 , int k1 , struct uio *f_uio, int buf_size,s
 	bzero(key, sizeof(key));
 	bcopy (&k0, &(key[0]), sizeof (k0));
 	bcopy (&k1, &(key[sizeof(k0)]), sizeof (k1));
-	printf("key trail 1: ", key);
-	printf("key0 trail 1: ", key0);
-	printf("key1 trail 1: ", key0);
+//	printf("key trail 1: ", key);
+//	printf("key0 trail 1: ", key0);
+//	printf("key1 trail 1: ", key0);
 	bzero(key, sizeof(key));
 	bcopy (&k0, &(key[0]), sizeof (k0));
 	bcopy (&k1, &(key[sizeof(k0)]), sizeof (k1));
-	printf("key trail 2: ", key);
-	printf("key0 trail 2: ", key0);
-	printf("key1 trail 2: ", key0);
-	/* Initialize the Rijndael algorithm.*/
+//	printf("key trail 2: ", key);
+//	printf("key0 trail 2: ", key0);
+//	printf("key1 trail 2: ", key0);
+	
 	nrounds = rijndaelSetupEncrypt(rk, key, 128);
 	
-	/* Copy entire buffer into a temp buffer */
-	char tempbuf[bufs[buf_num].iov_len];
-	char *bufpnt = bufs[buf_num].iov_base;
+
+	char tempbuf[io_buffer[buf_size].iov_len];
+	char *bufpnt = io_buffer[buf_size].iov_base;
 
 	printf("buffer before e/decription %s\n", bufpnt);
 	
 	
 	return 1;
 }
-
+*/
 struct vop_vector crypto_vnodeops = {
 	.vop_bypass =		crypto_bypass,
 	.vop_access =		crypto_access,
@@ -1003,5 +1012,5 @@ struct vop_vector crypto_vnodeops = {
 	.vop_vptofh =		crypto_vptofh,
 	.vop_add_writecount =	crypto_add_writecount,
 	.vop_read=	crypto_read,
-	.vop_write=	crypto_write,
+//	.vop_write=	crypto_write,
 };
