@@ -90,9 +90,6 @@ int main (int argc, char **argv){
   } 
 
 
-  /*Convert key from hexa to integer*/
-  int key = (int)strtol(inputkey, NULL, 16);
-  k0
 
 /*
 Checking if the user option was encryption. It validates first if the file was encrypted or not. If not, it does. 
