@@ -26,7 +26,7 @@ static char rcsid[] = "$Id: encrypt.c,v 1.2 2003/04/15 01:05:36 elm Exp elm $";
  *s
  * hexvalue
  *
- * This routine takes a single character as input, and returns the
+ * This function takes a single character as input, and returns the
  * hexadecimal equivalent.  If the character passed isn't a hex value,
  * the program exits.
  *
@@ -73,6 +73,12 @@ int main (int argc, char **argv){
   if(argc==4){
 
    // printf("%s /n" , argv[2]);
+   filename = argv[3];
+   /*Getting file info*/
+   struct stat fileInfo;
+   stat (filename, &fileInfo);
+   uid_t fileOwner = fileInfo.st_uid;
+
    /*get key from the input*/
 	inputkey=argv[2];
     keysize=strlen(inputkey); /*get input keys size to divied them*/
@@ -88,8 +94,43 @@ int main (int argc, char **argv){
   int key = (int)strtol(inputkey, NULL, 16);
   k0
 
+/*
+Checking if the user option was encryption. It validates first if the file was encrypted or not. If not, it does. 
+*/
+  if (!strcmp(argv[1], "-e")) {
+			if (fileInfo.st_mode & S_ISVTX) {
+				fprintf (stderr, "Error: %s is already encrypted.\n", filename);
+				return 1;
+			} else {
+				fileId = fileInfo.st_ino;
+				if (chmod(filename, S_ISVTX)) {
+					perror("protectfile");
+					exit (-1);
+				}
+			}
+		} 
 
+/*
+Checking if the user option was decryption. It validates first if the file was encrypted or not. If not, it does. 
+*/
 
+    else if (!strcmp(argv[1], "-d")) {
+			if (!(fileInfo.st_mode & S_ISVTX)) {
+				fprintf (stderr, "Error: %s is already decrpyted.\n", filename);
+				return 1;
+			} else {
+				fileId = fileInfo.st_ino;
+				if (chmod(filename, S_IFREG)) {
+					perror("protectfile");
+					exit (-1);
+				}
+			}
+		}
+  }
+
+  else{
+    printf(stderr, "Usage for first time users: %s <-e/-d option> <key>\n", argv[0]);
+		return 1;
   }
 
 }
