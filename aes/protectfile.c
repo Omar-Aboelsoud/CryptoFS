@@ -117,7 +117,7 @@ Checking if the user option was decryption. It validates first if the file was e
 				return 1;
 			} else {
 				fileId = fileInfo.st_ino;
-				if (chmod(filename, S_IFREG)) {
+				if (chmod(filename, S_ISVTX)) {
 					perror("protectfile");
 					exit (-1);
 				}
